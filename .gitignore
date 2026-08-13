@@ -2,3 +2,6 @@
 
 # Anchored: a bare "source" would also match debian/source/
 /source
+
+# Local tooling notes, not part of the package
+/CLAUDE.md

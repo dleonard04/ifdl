@@ -26,18 +26,18 @@ help () {
 # list_nets
 ##############################################################
 list_nets () {
- prime_file=`echo $FILES | awk '{print $1}'`
- locs=`ls $prime_file.* | sed "s#$prime_file\.##g"`
+ prime_file=${FILES%% *}
 
- if [ "$locs" ]; then
-  echo "Network locations found:"
-  for i in $locs ; do
-   echo $i
-  done
-
- else
+ set -- "$prime_file".*
+ if [ ! -f "$1" ]; then
   error "No custom network locations found"
  fi
+
+ echo "Network locations found:"
+ for path in "$@" ; do
+  [ -f "$path" ] || continue
+  echo "${path##*.}"
+ done
 
  exit 0
 } #list
@@ -61,64 +61,68 @@ ifup_args=
 interface=
 network=
 
-if [ -f $conf ]; then
- . /etc/network/ifdl.conf
+if [ -f "$conf" ]; then
+ # shellcheck source=/dev/null
+ . "$conf"
 else
  error "Conf file [$conf] not found"
 fi
 
-args="$*"
-
-for arg in $args ; do
- arg_dash=`echo $arg | grep - 2>/dev/null`
- if [ "$arg_dash" ]; then
-  if [ "$arg_dash" = "-a" ]; then
+while [ $# -gt 0 ] ; do
+ case $1 in
+  -a)
    interface="-a"
-
-  elif [ "$arg" = "--backup" -o "$arg" = "-b" ]; then
+   ;;
+  -b|--backup)
    backup=1
-
-  elif [ "$arg" = "--force" -o "$arg" = "-f" ]; then
+   ;;
+  -f|--force)
    force="-f"
-
-  elif [ "$arg" = "--list" -o "$arg" = "-l" ]; then
+   ;;
+  -l|--list)
    list_nets
-
-  elif [ "$arg" = "--verbose" -o "$arg" = "-v" ]; then
+   ;;
+  -v|--verbose)
    ifup_args="$ifup_args --verbose"
-
-  elif [ "$arg" = "--help" -o "$arg" = "-h" ]; then
+   ;;
+  -h|--help)
    help
-
-  else
+   ;;
+  -*)
    help
-  fi
+   ;;
+  *)
+   if [ -z "$interface" ]; then
+    interface="$1"
 
- else
-  if [ ! "$interface" ]; then
-   interface="$arg"
+   elif [ -z "$network" ]; then
+    network="$1"
 
-  elif [ ! "$network" ]; then
-   network="$arg"
-
-  else
-   error "Unknown argument [$arg]"
-  fi
- fi
+   else
+    error "Unknown argument [$1]"
+   fi
+   ;;
+ esac
+ shift
 done
 
-for i in $FILES; do
- if [ -f $i.$network ]; then
-  if [ "$backup" ]; then
-   cp $force $i $i.bak
-  fi
+# FILES is a space-separated list and $force is either -f or empty, so both
+# are left unquoted on purpose
+# shellcheck disable=SC2086
+for file in $FILES; do
+ [ -f "$file.$network" ] || continue
 
-  cp $force $i.$network $i
+ if [ -n "$backup" ]; then
+  cp $force "$file" "$file.bak"
  fi
+
+ cp $force "$file.$network" "$file"
 done
 
-if [ ! "$interface" ]; then
+if [ -z "$interface" ]; then
  error "No interface specified"
 fi
 
-$IFUP $ifup_args $interface
+# IFUP may carry arguments of its own, and $ifup_args must word-split
+# shellcheck disable=SC2086
+$IFUP $ifup_args "$interface"

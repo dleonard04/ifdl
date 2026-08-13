@@ -12,6 +12,15 @@ ifdl (1.0.2) unstable; urgency=low
     up on the previous location's configuration.
   * ifset: initialise $force alongside the other variables.
 
+  * Modernise both scripts to current POSIX shell practice; shellcheck -s sh
+    is now clean:
+    - Replace the `for arg in $*` parsers with `while`/`case` loops, so
+      arguments containing whitespace and location or interface names
+      containing a dash (br-lan, coffee-shop) now work
+    - $(...) instead of backticks, quote expansions, use [ p ] || [ q ]
+      instead of the non-portable [ p -o q ]
+    - Derive --list from a glob rather than parsing ls output
+
  -- Douglas Leonard <dleonard@dleonard.net>  Thu, 13 Aug 2026 08:40:00 -0700
 
 ifdl (1.0.1) unstable; urgency=low

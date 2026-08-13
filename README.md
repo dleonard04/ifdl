@@ -173,12 +173,9 @@ you. Both tools use a hand-rolled argument loop rather than `getopt`.
   `ifdl work` runs `ifup work`; it does not switch to the `work` location. The
   location is only recognized as the second positional, so you always need
   both: `ifdl eth0 work`.
-- **Location names cannot contain a `-`.** Any argument containing a dash is
-  treated as an option, so `ifdl eth0 coffee-shop` prints the help text instead
-  of switching. Note `-l` will happily *list* such a location, so it can look
-  defined while being unreachable. Use `coffeeshop`.
-- **Arguments cannot contain whitespace**, and combined short flags (`-bv`) are
-  not supported. Pass flags separately.
+- **Combined short flags are not supported.** `-bv` is rejected; pass `-b -v`.
+- **`-l` lists `.bak` as a location.** It globs the first entry in `FILES`, so
+  the backup `-b` leaves behind shows up alongside your real locations.
 - **No rollback if `ifup` fails.** Config files are copied first, so a failed
   `ifup` leaves you switched to the new location's files regardless.
 - **The live file is overwritten, not symlinked.** Any edit you make to a live
