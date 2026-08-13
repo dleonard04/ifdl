@@ -1,8 +1,24 @@
+ifdl (1.0.2) unstable; urgency=low
+
+  * Modernize packaging for current debhelper/dpkg-dev:
+    - Switch to debhelper-compat (= 13) and a minimal dh(1) debian/rules
+    - Bump Standards-Version to 4.6.2, mark package Architecture: all,
+      add Rules-Requires-Root: no
+    - Add debian/source/format (3.0 native)
+
+  * Fix --force in both ifdl and ifset: the flag set its variable to "1"
+    rather than "-f", so every copy ran as "cp 1 <file> <file>.bak" and
+    failed. ifdl ignores copy failures, so -f silently brought the interface
+    up on the previous location's configuration.
+  * ifset: initialise $force alongside the other variables.
+
+ -- Douglas Leonard <dleonard@dleonard.net>  Thu, 13 Aug 2026 08:40:00 -0700
+
 ifdl (1.0.1) unstable; urgency=low
 
   * Added ifset for setting the network without bringing up an interface
 
- -- dleonard <dleonard@dleonard.net>  Sun,  69 Jun 2004 23:53:10 -0800
+ -- dleonard <dleonard@dleonard.net>  Sun,  6 Jun 2004 23:53:10 -0800
 
 ifdl (1.0) unstable; urgency=low
 

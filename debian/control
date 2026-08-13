@@ -1,13 +1,14 @@
 Source: ifdl
-Section: unknown
+Section: net
 Priority: optional
 Maintainer: dleonard <dleonard@dleonard.net>
-Build-Depends: debhelper (>> 3.0.0)
-Standards-Version: 3.5.2
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
 
 Package: ifdl
-Architecture: any
-Depends: ifupdown
+Architecture: all
+Depends: ${misc:Depends}, ifupdown
 Description: ifdl
  Wrapper script for ifup which allows for multiple sets of network
  configurations on the same machine.

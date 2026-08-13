@@ -1,18 +1,20 @@
 #!/bin/sh
-# Tool for setting which network should be used (without actually bringing up
-# any interfaces.)  This is useful for things like wlan where you want to set
-# the network before attempting to bring it up due to wireless authentication.
+# $Id: ifdl,v 1.3 2004/01/14 07:24:27 dleonard Exp $
+# Wrapper around ifup for handling multiple network configurations at the user
+# level.
 
 ##############################################################
 # help
 ##############################################################
 help () {
  echo
- echo "Usage: ifset [-b] [-f] [-h] [-l] [network location]"
+ echo "Usage: ifdl [-b] [-f] [-h] [-l] [-v] <interface> [network location]"
+ echo " <interface> can be any single network interface or -a for all"
  echo " [-b|--backup] back up conf files to prevent accidental destruction"
  echo " [-f|--force] force overwrite conf files"
  echo " [-h|--help] this help list"
  echo " [-l|--list] lists all defined network locations"
+ echo " [-v|--verbose] passes --verbose flag to ifup"
  echo " [network location] denotes the suffix you have appended to the"
  echo "   relevant configuration files.  See /etc/network/ifdl.conf for a"
  echo "   listing of those files."
@@ -54,6 +56,9 @@ error () {
 # VARS
 backup=
 conf="/etc/network/ifdl.conf"
+force=
+ifup_args=
+interface=
 network=
 
 if [ -f $conf ]; then
@@ -67,14 +72,20 @@ args="$*"
 for arg in $args ; do
  arg_dash=`echo $arg | grep - 2>/dev/null`
  if [ "$arg_dash" ]; then
-  if [ "$arg" = "--backup" -o "$arg" = "-b" ]; then
+  if [ "$arg_dash" = "-a" ]; then
+   interface="-a"
+
+  elif [ "$arg" = "--backup" -o "$arg" = "-b" ]; then
    backup=1
 
   elif [ "$arg" = "--force" -o "$arg" = "-f" ]; then
-   force=1
+   force="-f"
 
   elif [ "$arg" = "--list" -o "$arg" = "-l" ]; then
    list_nets
+
+  elif [ "$arg" = "--verbose" -o "$arg" = "-v" ]; then
+   ifup_args="$ifup_args --verbose"
 
   elif [ "$arg" = "--help" -o "$arg" = "-h" ]; then
    help
@@ -84,7 +95,10 @@ for arg in $args ; do
   fi
 
  else
-  if [ ! "$network" ]; then
+  if [ ! "$interface" ]; then
+   interface="$arg"
+
+  elif [ ! "$network" ]; then
    network="$arg"
 
   else
@@ -92,10 +106,6 @@ for arg in $args ; do
   fi
  fi
 done
-
-if [ ! "$network" ]; then
- error "No network specified."
-fi
 
 for i in $FILES; do
  if [ -f $i.$network ]; then
@@ -107,4 +117,8 @@ for i in $FILES; do
  fi
 done
 
-echo "Current configured network [$network]"
+if [ ! "$interface" ]; then
+ error "No interface specified"
+fi
+
+$IFUP $ifup_args $interface

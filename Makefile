@@ -1,5 +1,8 @@
 SHELL=/bin/sh
 
+# debhelper runs `make -j16`; pre/post rename the source dir, so serialize
+.NOTPARALLEL:
+
 current_dir:=$(shell pwd)
 changelog:=$(current_dir)/debian/changelog
 
@@ -15,6 +18,10 @@ pkgname_ver:=$(pkgname)_$(version)
 src_dir:=$(current_dir)/$(pkgname_ver)
 usr_dir:=$(current_dir)/usr
 
+# Must be set here: clean-dst does `rm -rf` on it, and make would otherwise
+# take the value from the environment
+dst_dir:=$(current_dir)/dst
+
 pkg_dist.dir?=/var/tmp
 
 build: pre bld post
@@ -29,7 +36,7 @@ install: pre install-files prune fix post
 
 install-files:
 	mkdir -p $(DESTDIR)/sbin
-	mkdir $(DESTDIR)/etc
+	mkdir -p $(DESTDIR)/etc
 	cp $(src_dir)/ifdl $(DESTDIR)/sbin/.
 	cp $(src_dir)/ifset $(DESTDIR)/sbin/.
 	cp $(src_dir)/ifdl.conf $(DESTDIR)/etc/.
@@ -39,10 +46,10 @@ prune:
 fix:
 
 dist:
-	cp ../$(pkgname)_$(version)_i386.deb $(pkg_dist.dir)
+	cp ../$(pkgname_ver)_*.deb $(pkg_dist.dir)
 
 bin-pkg:
-	dpkg-buildpackage -B
+	dpkg-buildpackage -b
 
 src-pkg:
 	dpkg-buildpackage -S
@@ -60,16 +67,21 @@ clean-debian:
 clean-src:
 
 clean-dst:
-	-rm -rf $(dst_dir)
+	rm -rf $(dst_dir)
 
+# Clean up build artifacts, which dpkg writes to the parent directory
 clean-pkg:
-	-rm ../$(pkgname_ver).dsc 
-	-rm ../$(pkgname_ver).tar.gz 
-	-rm ../$(pkgname_ver)_source.changes
-	-rm ../$(pkgname_ver)_i386.deb 
-	-rm ../$(pkgname_ver)_i386.changes
+	rm -f ../$(pkgname_ver).dsc \
+	      ../$(pkgname_ver).tar.* \
+	      ../$(pkgname_ver)_*.deb \
+	      ../$(pkgname_ver)_*.changes \
+	      ../$(pkgname_ver)_*.buildinfo
 
 clean-most: pre clean-debian clean-src clean-dst post
 distclean clean-all: pre clean-debian clean-src clean-dst clean-pkg post
 
-.PHONY: clean
+# Keep this complete: `build` has no recipe, so without it make applies its
+# built-in `%: %.sh` rule and generates a `build` file from build.sh
+.PHONY: build bld cfg cfg-deb install install-files prune fix dist \
+        bin-pkg src-pkg pre post clean clean-debian clean-src clean-dst \
+        clean-pkg clean-most distclean clean-all

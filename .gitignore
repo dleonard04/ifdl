@@ -1,0 +1,4 @@
+*.swp
+
+# Anchored: a bare "source" would also match debian/source/
+/source
